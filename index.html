@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anxiety Companion</title>
+    <style>
+        :root {
+            --bg-color: #fff5e6;
+            --primary-color: #4a4a4a;
+            --accent-color: #ff8c00;
+            --accent-light: #ffa500;
+            --accent-dark: #ff7f50;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        @keyframes breatheAnimation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes shakeEmotion {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .header {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        #anxietySlider {
+            width: 300px;
+            transform: rotate(90deg);
+            margin: 150px 0;
+            accent-color: var(--accent-color);
+            -webkit-appearance: slider-vertical;
+        }
+        .meter-container {
+            width: 40px;
+            height: 300px;
+            background: #ddd;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .meter {
+            width: 100%;
+            height: 0%;
+            transition: height 0.3s, background-color 0.3s;
+            position: absolute;
+            bottom: 0;
+        }
+        .emoji {
+            font-size: 60px;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+        .emoji.breathe {
+            animation: breatheAnimation 2s infinite;
+        }
+        .emoji.shake {
+            animation: shakeEmotion 0.5s;
+        }
+        .conditional-text {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .conditional-text.visible {
+            opacity: 1;
+            animation: fadeIn 0.5s forwards;
+        }
+        .tracking-info {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 300px;
+        }
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn:hover {
+            background-color: var(--accent-dark);
+            transform: scale(1.05);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        #journalEntry {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid var(--accent-light);
+            border-radius: 5px;
+            min-height: 100px;
+            transition: box-shadow 0.3s;
+        }
+        #journalEntry:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255,140,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Anxiety Companion</h1>
+        <p>Track and Understand Your Anxiety</p>
+    </header>
+
+    <main class="main-content">
+        <div class="emoji">😐</div>
+        
+        <div class="slider-container">
+            <div class="meter-container">
+                <div class="meter"></div>
+            </div>
+            <input type="range" id="anxietySlider" min="0" max="100" step="1" value="50" oninput="updateMeter()">
+        </div>
+        
+        <div class="tracking-info">
+            <p id="anxietyLevel">Current Anxiety Level: 50%</p>
+            <p id="anxietyInterpretation">Moderate Anxiety</p>
+        </div>
+        
+        <div id="conditionalText" class="conditional-text"></div>
+        
+        <textarea id="journalEntry" placeholder="Optional: Write about what's causing your anxiety..."></textarea>
+        
+        <div>
+            <button class="btn" onclick="saveEntry()">Save Journal Entry</button>
+            <button class="btn" onclick="viewHistory()">View History</button>
+        </div>
+        
+        <div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000;">
+            <div style="background:white; width:80%; max-width:600px; margin:50px auto; padding:20px; border-radius:10px;">
+                <h2>Anxiety Tracking History</h2>
+                <div id="historyContent"></div>
+                <button class="btn" onclick="closeHistory()">Close</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="header">
+        <p>© 2024 Anxiety Companion | Mental Health Matters</p>
+        <small>Remember: This is a tool to help, not a substitute for professional help</small>
+    </footer>
+
+    <script>
+        // Conditional advice texts
+        const conditionalTexts = {
+            calm: [
+                "You're doing great! Your anxiety is low.",
+                "Take a moment to appreciate your current peace.",
+                "Your calm state is a strength. Maintain it.",
+                "Enjoy this moment of tranquility."
+            ],
+            moderate: [
+                "Take slow, deep breaths. You've got this.",
+                "It's okay to feel anxious. Acknowledge your feelings.",
+                "Try a grounding technique: Name 5 things you can see.",
+                "Remember, this feeling is temporary."
+            ],
+            high: [
+                "Your feelings are valid. You're not alone.",
+                "Consider reaching out to a trusted friend or professional.",
+                "Practice self-compassion. Be kind to yourself.",
+                "Anxiety doesn't define you. You are stronger than you think."
+            ]
+        };
+
+        // Anxiety tracking and visualization
+        function updateMeter() {
+            let slider = document.getElementById("anxietySlider");
+            let meter = document.querySelector(".meter");
+            let emoji = document.querySelector(".emoji");
+            let levelText = document.getElementById("anxietyLevel");
+            let interpretationText = document.getElementById("anxietyInterpretation");
+            let conditionalTextDiv = document.getElementById("conditionalText");
+            let value = 100 - slider.value; // Invert value for bottom-up meter
+            
+            // Save current anxiety level
+            localStorage.setItem("anxietyLevel", 100 - value);
+            
+            // Update meter color and height
+            meter.style.height = value + "%";
+            meter.style.backgroundColor = `rgb(${value * 2.55}, ${150 - value}, ${255 - value * 1.5})`;
+            
+            // Update level text
+            levelText.textContent = `Current Anxiety Level: ${100 - value}%`;
+            
+            // Reset emoji classes
+            emoji.classList.remove('breathe', 'shake');
+            
+            // Update emoji and interpretation with animations
+            if (value > 70) {
+                emoji.textContent = "😱"; // Calm
+                interpretationText.textContent = "Low Anxiety";
+                emoji.classList.add('breathe');
+                
+                // Add random calm text
+                conditionalTextDiv.textContent = 
+                    conditionalTexts.calm[Math.floor(Math.random() * conditionalTexts.calm.length)];
+                conditionalTextDiv.classList.add('visible');
+            } else if (value > 30) {
+                emoji.textContent = "😰"; // Nervous
+                interpretationText.textContent = "Moderate Anxiety";
+                emoji.classList.add('shake');
+                
+                // Add random moderate anxiety text
+                conditionalTextDiv.textContent = 
+                    conditionalTexts.moderate[Math.floor(Math.random() * conditionalTexts.moderate.length)];
+                conditionalTextDiv.classList.add('visible');
+            } else {
+                emoji.textContent = "😌"; // Very Anxious
+                interpretationText.textContent = "High Anxiety";
+                emoji.classList.add('shake');
+                
+                // Add random high anxiety text
+                conditionalTextDiv.textContent = 
+                    conditionalTexts.high[Math.floor(Math.random() * conditionalTexts.high.length)];
+                conditionalTextDiv.classList.add('visible');
+            }
+        }
+        
+        // Save journal entry with timestamp
+        function saveEntry() {
+            let entry = document.getElementById("journalEntry").value;
+            let timestamp = new Date().toLocaleString();
+            let anxietyLevel = 100 - document.querySelector(".meter").style.height.replace('%', '');
+            
+            if (entry.trim()) {
+                let journalEntries = JSON.parse(localStorage.getItem("anxietyJournal") || "[]");
+                journalEntries.push({
+                    timestamp: timestamp,
+                    anxietyLevel: Math.round(anxietyLevel),
+                    entry: entry
+                });
+                
+                localStorage.setItem("anxietyJournal", JSON.stringify(journalEntries));
+                alert("Journal entry saved successfully!");
+                document.getElementById("journalEntry").value = "";
+            } else {
+                alert("Please write something in your journal entry.");
+            }
+        }
+        
+        // View tracking history
+        function viewHistory() {
+            let journalEntries = JSON.parse(localStorage.getItem("anxietyJournal") || "[]");
+            let historyContent = document.getElementById("historyContent");
+            let historyModal = document.getElementById("historyModal");
+            
+            historyContent.innerHTML = journalEntries.length 
+                ? journalEntries.map(entry => `
+                    <div style="border-bottom: 1px solid #ddd; padding: 10px;">
+                        <strong>${entry.timestamp}</strong><br>
+                        Anxiety Level: ${entry.anxietyLevel}%<br>
+                        ${entry.entry}
+                    </div>
+                `).join('')
+                : "<p>No journal entries yet.</p>";
+            
+            historyModal.style.display = "block";
+        }
+        
+        // Close history modal
+        function closeHistory() {
+            document.getElementById("historyModal").style.display = "none";
+        }
+        
+        // Load saved anxiety level on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            let savedValue = localStorage.getItem("anxietyLevel") || 50;
+            document.getElementById("anxietySlider").value = 100 - savedValue;
+            updateMeter();
+        });
+
+        const getAnxietyEmoji = (value) => {
+            if (value < 20) return '��';
+            if (value < 40) return '😐';
+            if (value < 60) return '😟';
+            if (value < 80) return '😰';
+            return '😱';
+        };
+
+        const getAnxietyText = (value) => {
+            if (value < 20) return 'Very Low Anxiety';
+            if (value < 40) return 'Low Anxiety';
+            if (value < 60) return 'Moderate Anxiety';
+            if (value < 80) return 'High Anxiety';
+            return 'Very High Anxiety';
+        };
+    </script>
+</body>
+</html>
